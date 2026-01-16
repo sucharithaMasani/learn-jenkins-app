@@ -2,11 +2,8 @@ pipeline {
     agent any
 
     environment {
-        
-         DOCKER_HOST = 'tcp://host.docker.internal:2375'
-         DOCKER_TLS_VERIFY = '0'
-        
-        
+        DOCKER_HOST = 'tcp://192.168.5.71:2375'
+        DOCKER_TLS_VERIFY = '0'
     }
 
     stages {
