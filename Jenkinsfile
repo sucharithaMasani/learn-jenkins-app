@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_HOST = 'tcp://localhost:2375'
+        
+        
+    }
+
     stages {
         stage('Build') {
             agent {
@@ -28,7 +34,6 @@ pipeline {
                     reuseNode true
                 }
             }
-
             steps {
                 sh '''
                     test -f build/index.html
@@ -38,4 +43,3 @@ pipeline {
         }
     }
 }
-
