@@ -23,11 +23,4 @@ pipeline {
             }
         }
     }
-
-    post {
-        always {
-            // Added allowEmptyResults so the pipeline doesn't crash if tests fail
-            junit testResults: '**/junit.xml', allowEmptyResults: true
-        }
-    }
 }
