@@ -4,8 +4,8 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                // We use 'bat' because you are on Windows
-                bat '''
+                // Use 'sh' for Linux/Unix, not 'bat'
+                sh '''
                     node --version
                     npm --version
                     npm ci
@@ -16,8 +16,8 @@ pipeline {
 
         stage('Test') {
             steps {
-                bat '''
-                    if exist build\\index.html (echo Build exists) else (exit 1)
+                sh '''
+                    test -f build/index.html && echo "Build exists" || exit 1
                     npm test
                 '''
             }
