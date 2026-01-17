@@ -5,10 +5,15 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    // Connect to Docker TCP without TLS
-                    docker.withServer('tcp://192.168.5.71:2375', '') {
+                    withEnv([
+                        'DOCKER_HOST=tcp://host.docker.internal:2375',
+                        'DOCKER_TLS_VERIFY=0',
+                        'DOCKER_CERT_PATH='
+                    ]) {
                         docker.image('node:18-alpine').inside {
                             sh '''
+                                echo "Docker inside container:"
+                                docker version
                                 ls -la
                                 node --version
                                 npm --version
@@ -25,9 +30,14 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    docker.withServer('tcp://192.168.5.71:2375', '') {
+                    withEnv([
+                        'DOCKER_HOST=tcp://host.docker.internal:2375',
+                        'DOCKER_TLS_VERIFY=0',
+                        'DOCKER_CERT_PATH='
+                    ]) {
                         docker.image('node:18-alpine').inside {
                             sh '''
+                                echo "Docker inside container:"
                                 test -f build/index.html
                                 npm test
                             '''
@@ -38,3 +48,4 @@ pipeline {
         }
     }
 }
+
