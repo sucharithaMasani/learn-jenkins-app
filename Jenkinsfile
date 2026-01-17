@@ -10,14 +10,15 @@ pipeline {
     stages {
         stage('Build') {
             steps {
+                // Force Docker CLI from path, ignore plugin
                 sh '''
-                    echo "Docker info:"
-                    docker version
+                    echo "Docker version:"
+                    /usr/bin/docker version || docker version
 
-                    echo "Pulling node image"
-                    docker pull node:18-alpine
+                    echo "Pull node image"
+                    /usr/bin/docker pull node:18-alpine || docker pull node:18-alpine
 
-                    echo "Running container to build"
+                    echo "Run build container"
                     docker run --rm -v $PWD:/app -w /app node:18-alpine sh -c "
                         ls -la
                         node --version
@@ -33,7 +34,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    echo "Running tests in node container"
+                    echo "Run tests container"
                     docker run --rm -v $PWD:/app -w /app node:18-alpine sh -c "
                         test -f build/index.html
                         npm test
