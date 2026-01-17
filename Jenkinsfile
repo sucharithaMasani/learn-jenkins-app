@@ -5,14 +5,16 @@ pipeline {
         stage('Build') {
             steps {
                 script {
+                    // Set environment variables so Docker client does not look for certs
                     withEnv([
                         'DOCKER_HOST=tcp://host.docker.internal:2375',
                         'DOCKER_TLS_VERIFY=0',
                         'DOCKER_CERT_PATH='
                     ]) {
+                        // Use scripted Docker block
                         docker.image('node:18-alpine').inside {
                             sh '''
-                                echo "Docker inside container:"
+                                echo "Docker info:"
                                 docker version
                                 ls -la
                                 node --version
@@ -37,7 +39,7 @@ pipeline {
                     ]) {
                         docker.image('node:18-alpine').inside {
                             sh '''
-                                echo "Docker inside container:"
+                                echo "Running tests"
                                 test -f build/index.html
                                 npm test
                             '''
@@ -48,4 +50,3 @@ pipeline {
         }
     }
 }
-
