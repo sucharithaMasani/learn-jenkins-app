@@ -3,6 +3,12 @@ pipeline {
 
     stages {
         stage('Build') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
             steps {
                 sh '''
                     node --version
@@ -47,8 +53,8 @@ pipeline {
 
     post {
         always {
-            junit 'jest-results/junit.xml'
-            
+            junit testResults: 'jest-results/junit.xml', allowEmptyResults: true
+            junit testResults: 'test-results/*.xml', allowEmptyResults: true
         }
     }
 }
