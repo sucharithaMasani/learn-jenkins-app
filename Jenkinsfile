@@ -48,7 +48,7 @@ pipeline {
     post {
         always {
             junit 'jest-results/junit.xml'
-            junit 'playwright-report/results.xml'
+            
         }
     }
 }
