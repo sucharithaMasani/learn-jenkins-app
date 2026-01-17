@@ -1,18 +1,11 @@
 pipeline {
     agent any
 
-    tools {
-        // This will now work once the plugin is installed
-        nodejs 'node18' 
-    }
-
     stages {
         stage('Build') {
             steps {
-                // On Windows, use 'bat' instead of 'sh' if your Jenkins agent is Windows
-                // But if you are inside a bash-like shell (Git Bash), 'sh' might work.
-                // I'll use 'sh' here assuming you are using a Linux-based Jenkins controller.
-                sh '''
+                // We use 'bat' because you are on Windows
+                bat '''
                     node --version
                     npm --version
                     npm ci
@@ -23,8 +16,8 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh '''
-                    test -f build/index.html
+                bat '''
+                    if exist build\\index.html (echo Build exists) else (exit 1)
                     npm test
                 '''
             }
@@ -33,7 +26,8 @@ pipeline {
 
     post {
         always {
-            junit testResults: 'test-results/junit.xml', allowEmptyResults: true
+            // Added allowEmptyResults so the pipeline doesn't crash if tests fail
+            junit testResults: '**/junit.xml', allowEmptyResults: true
         }
     }
 }
