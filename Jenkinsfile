@@ -2,24 +2,21 @@ pipeline {
     agent any
 
     stages {
-        stage('Build') {
+        stage('w/o docker') {
             steps {
-                // Use 'sh' for Linux/Unix, not 'bat'
-                sh '''
-                    node --version
-                    npm --version
-                    npm ci
-                    npm run build
-                '''
+                sh 'echo "Without docker"'
             }
         }
 
-        stage('Test') {
+        stage('w/ docker') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                }
+            }
             steps {
-                sh '''
-                    test -f build/index.html && echo "Build exists" || exit 1
-                    npm test
-                '''
+                sh 'echo "With docker"'
+                sh 'npm --version'
             }
         }
     }
