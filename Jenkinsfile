@@ -23,6 +23,12 @@ pipeline {
                     npm --version
                     npm ci
                     npm run build
+                    
+                    # Create netlify.toml to skip build command
+                    echo '[build]' > netlify.toml
+                    echo '  command = ""' >> netlify.toml
+                    echo '  publish = "build"' >> netlify.toml
+                    
                     ls -la
                 '''
             }
@@ -40,7 +46,6 @@ pipeline {
 
                     steps {
                         sh '''
-                            #test -f build/index.html
                             npm test
                         '''
                     }
@@ -61,7 +66,7 @@ pipeline {
 
                     steps {
                         sh '''
-                           npx playwright test  --reporter=html
+                           npx playwright test --reporter=html
                         '''
                     }
 
@@ -85,7 +90,7 @@ pipeline {
                 sh '''
                     npm install netlify-cli
                     node_modules/.bin/netlify --version
-                    echo "Deploying to production. Site ID: 79d8eb1a-8854-4e5e-95c2-4f00e52ab45e"
+                    echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
                     node_modules/.bin/netlify status
                     node_modules/.bin/netlify deploy --dir=build --prod
                 '''
@@ -106,7 +111,7 @@ pipeline {
 
             steps {
                 sh '''
-                    npx playwright test  --reporter=html
+                    npx playwright test --reporter=html
                 '''
             }
 
