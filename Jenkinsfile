@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        NETLIFY_SITE_ID = 'YOUR NETLIFY SITE ID'
+         NETLIFY_SITE_ID = '79d8eb1a-8854-4e5e-95c2-4f00e52ab45e'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
+        CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app/'
     }
 
     stages {
@@ -60,10 +61,7 @@ pipeline {
 
                     steps {
                         sh '''
-                            npm install serve
-                            node_modules/.bin/serve -s build &
-                            sleep 10
-                            npx playwright test  --reporter=html
+                           npx playwright test  --reporter=html
                         '''
                     }
 
@@ -79,10 +77,12 @@ pipeline {
         stage('Deploy staging') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'node:18-alpine'
                     reuseNode true
                 }
             }
+
+           
 
             steps {
                 sh '''
@@ -91,20 +91,13 @@ pipeline {
                     echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
                     node_modules/.bin/netlify status
                     node_modules/.bin/netlify deploy --dir=build --json > deploy-output.json
+                    
                 '''
                 script {
-                    env.CI_ENVIRONMENT_URL = sh(script: "node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
-                }
-                sh '''
-                    npx playwright test  --reporter=html
-                '''
+                    env.STAGING_URL = sh(script: "node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json", returnStdout: true) 
             }
 
-            post {
-                always {
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
-                }
-            }
+                       }
         }
 
         stage('Approval') {
@@ -118,14 +111,13 @@ pipeline {
         stage('Deploy prod') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'node:18-alpine'
                     reuseNode true
                 }
             }
 
-            environment {
+             environment {
                 CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app'
-            }
 
             steps {
                 sh '''
