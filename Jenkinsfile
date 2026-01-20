@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-         NETLIFY_SITE_ID = '79d8eb1a-8854-4e5e-95c2-4f00e52ab45e'
+        NETLIFY_SITE_ID = '79d8eb1a-8854-4e5e-95c2-4f00e52ab45e'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
         CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app/'
     }
@@ -82,8 +82,6 @@ pipeline {
                 }
             }
 
-           
-
             steps {
                 sh '''
                     npm install netlify-cli node-jq
@@ -91,13 +89,11 @@ pipeline {
                     echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
                     node_modules/.bin/netlify status
                     node_modules/.bin/netlify deploy --dir=build --json > deploy-output.json
-                    
                 '''
                 script {
-                    env.STAGING_URL = sh(script: "node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json", returnStdout: true) 
+                    env.STAGING_URL = sh(script: "node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json", returnStdout: true)
+                }
             }
-
-                       }
         }
 
         stage('Approval') {
@@ -116,8 +112,9 @@ pipeline {
                 }
             }
 
-             environment {
+            environment {
                 CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app'
+            }
 
             steps {
                 sh '''
