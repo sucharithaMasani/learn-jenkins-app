@@ -5,16 +5,9 @@ pipeline {
         NETLIFY_SITE_ID = '79d8eb1a-8854-4e5e-95c2-4f00e52ab45e'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
         REACT_APP_VERSION = "1.0.$BUILD_ID"
-        CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app/'
     }
 
     stages {
-
-         stage('Docker') {
-            steps {
-                sh 'docker build -t my-playwright .'
-            }
-         } 
 
         stage('Build') {
             agent {
@@ -68,9 +61,9 @@ pipeline {
 
                     steps {
                         sh '''
-                           serve -s build &
-                           sleep 10
-                           npx playwright test  --reporter=html
+                            serve -s build &
+                            sleep 10
+                            npx playwright test  --reporter=html
                         '''
                     }
 
@@ -91,6 +84,10 @@ pipeline {
                 }
             }
 
+            environment {
+                CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app'
+            }
+
             steps {
                 sh '''
                     npm install netlify-cli node-jq
@@ -101,22 +98,16 @@ pipeline {
                 '''
                 script {
                     env.STAGING_URL = sh(script: "node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json", returnStdout: true)
-                }
             }
-        }
 
-        stage('Approval') {
-            steps {
-                timeout(time: 15, unit: 'MINUTES') {
-                    input message: 'Do you wish to deploy to production?', ok: 'Yes, I am sure!'
-                }
-            }
+          }          
+
         }
 
         stage('Deploy prod') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'my-playwright'
                     reuseNode true
                 }
             }
@@ -124,15 +115,14 @@ pipeline {
             environment {
                 CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app'
             }
-
+            
             steps {
                 sh '''
                     node --version
-                    npm install netlify-cli
-                    node_modules/.bin/netlify --version
+                    netlify --version
                     echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --prod
+                    netlify status
+                    netlify deploy --dir=build --prod
                     npx playwright test  --reporter=html
                 '''
             }
