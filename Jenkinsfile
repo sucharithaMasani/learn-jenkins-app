@@ -65,6 +65,10 @@ pipeline {
                         }
                     }
 
+                    environment {
+                        CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app'
+                    }
+
                     steps {
                         sh '''
                             serve -s build &
