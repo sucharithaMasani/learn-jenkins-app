@@ -4,6 +4,7 @@ pipeline {
     environment {
         NETLIFY_SITE_ID = '79d8eb1a-8854-4e5e-95c2-4f00e52ab45e'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
+        REACT_APP_VERSION = "1.0.$BUILD_ID"
         CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app/'
     }
 
@@ -60,13 +61,15 @@ pipeline {
                 stage('E2E') {
                     agent {
                         docker {
-                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                            image 'my-playwright'
                             reuseNode true
                         }
                     }
 
                     steps {
                         sh '''
+                           serve -s build &
+                           sleep 10
                            npx playwright test  --reporter=html
                         '''
                     }
@@ -83,7 +86,7 @@ pipeline {
         stage('Deploy staging') {
             agent {
                 docker {
-                    image 'node:18-alpine'
+                    image 'my-playwright'
                     reuseNode true
                 }
             }
