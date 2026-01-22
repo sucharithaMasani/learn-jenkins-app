@@ -16,6 +16,9 @@ pipeline {
                     reuseNode true
                 }
             }
+            environment {
+                REACT_APP_VERSION = "1.0.$BUILD_ID"
+            }
             steps {
                 sh '''
                     ls -la
@@ -57,6 +60,10 @@ pipeline {
                             image 'my-playwright'
                             reuseNode true
                         }
+                    }
+
+                    environment {
+                        CI_ENVIRONMENT_URL = 'http://localhost:3000'
                     }
 
                     steps {
