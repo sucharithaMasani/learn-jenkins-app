@@ -9,12 +9,6 @@ pipeline {
 
     stages {
 
-        stage('Docker') {
-            steps {
-                sh 'docker build -t my-playwright .'
-            }
-        }    
-
         stage('Build') {
             agent {
                 docker {
@@ -65,10 +59,6 @@ pipeline {
                         }
                     }
 
-                    environment {
-                        CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app'
-                    }
-
                     steps {
                         sh '''
                             serve -s build &
@@ -100,17 +90,15 @@ pipeline {
 
             steps {
                 sh '''
-                    npm install netlify-cli node-jq
-                    node_modules/.bin/netlify --version
+                    netlify --version
                     echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --json > deploy-output.json
+                    netlify status
+                    netlify deploy --dir=build --json > deploy-output.json
+                    CI_ENVIRONMENT_URL=$(jq -r '.deploy_url' deploy-output.json)
+                    npx playwright test  --reporter=html
                 '''
-                script {
-                    env.STAGING_URL = sh(script: "node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json", returnStdout: true)
-                }
             }
-            
+
             post {
                 always {
                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
@@ -129,7 +117,7 @@ pipeline {
             environment {
                 CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app'
             }
-            
+
             steps {
                 sh '''
                     node --version
