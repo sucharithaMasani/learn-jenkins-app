@@ -9,11 +9,19 @@ pipeline {
 
     stages {
 
-        stage('Docker') {
-            steps {
-                sh 'docker build -t my-playwright .'
+        stage('AWS') {
+            agent {
+                docker {
+                    image 'amazon/aws-cli'
+                    args "--entrypoint=''"
+                }
             }
-        }    
+            steps {
+                sh '''
+                    aws --version
+                '''
+            }
+        }
 
         stage('Build') {
             agent {
@@ -65,15 +73,11 @@ pipeline {
                         }
                     }
 
-                    environment {
-                        CI_ENVIRONMENT_URL = 'http://localhost:3000'
-                    }
-
                     steps {
                         sh '''
                             serve -s build &
                             sleep 10
-                            npx playwright test --reporter=html
+                            npx playwright test  --reporter=html
                         '''
                     }
 
@@ -91,7 +95,6 @@ pipeline {
                 docker {
                     image 'my-playwright'
                     reuseNode true
-                    args '-u root'
                 }
             }
 
@@ -101,32 +104,18 @@ pipeline {
 
             steps {
                 sh '''
-                    npm install netlify-cli node-jq
-                    node_modules/.bin/netlify --version
+                    netlify --version
                     echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --json > deploy-output.json
-                '''
-                script {
-                    env.STAGING_URL = sh(script: "node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
-                    env.CI_ENVIRONMENT_URL = env.STAGING_URL
-                }
-                sh '''
-                    npx playwright test --reporter=html
+                    netlify status
+                    netlify deploy --dir=build --json > deploy-output.json
+                    CI_ENVIRONMENT_URL=$(jq -r '.deploy_url' deploy-output.json)
+                    npx playwright test  --reporter=html
                 '''
             }
-            
+
             post {
                 always {
                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
-                }
-            }
-        }
-
-        stage('Approval') {
-            steps {
-                timeout(time: 15, unit: 'MINUTES') {
-                    input message: 'Do you wish to deploy to production?', ok: 'Yes, I am sure!'
                 }
             }
         }
@@ -142,15 +131,14 @@ pipeline {
             environment {
                 CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app'
             }
-            
+
             steps {
                 sh '''
                     node --version
-                    npm install netlify-cli
-                    node_modules/.bin/netlify --version
+                    netlify --version
                     echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --prod
+                    netlify status
+                    netlify deploy --dir=build --prod
                     npx playwright test  --reporter=html
                 '''
             }
