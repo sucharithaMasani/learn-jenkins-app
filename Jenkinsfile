@@ -4,7 +4,7 @@ pipeline {
     environment {
         NETLIFY_SITE_ID = '79d8eb1a-8854-4e5e-95c2-4f00e52ab45e'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
-        REACT_APP_VERSION = "1.0.$BUILD_ID"
+        REACT_APP_VERSION = "1.0.${BUILD_ID}"
     }
 
     stages {
@@ -17,9 +17,7 @@ pipeline {
                 }
             }
             steps {
-                sh '''
-                    aws --version
-                '''
+                sh 'aws --version'
             }
         }
 
@@ -28,35 +26,33 @@ pipeline {
                 docker {
                     image 'node:18-alpine'
                     reuseNode true
+                    args "-e REACT_APP_VERSION=${REACT_APP_VERSION}"
                 }
             }
             steps {
                 sh '''
-                    ls -la
+                    echo "Building version: $REACT_APP_VERSION"
                     node --version
                     npm --version
                     npm ci
                     npm run build
-                    ls -la
                 '''
             }
         }
 
         stage('Tests') {
             parallel {
+
                 stage('Unit tests') {
                     agent {
                         docker {
                             image 'node:18-alpine'
                             reuseNode true
+                            args "-e REACT_APP_VERSION=${REACT_APP_VERSION}"
                         }
                     }
-
                     steps {
-                        sh '''
-                            #test -f build/index.html
-                            npm test
-                        '''
+                        sh 'npm test'
                     }
                     post {
                         always {
@@ -70,20 +66,27 @@ pipeline {
                         docker {
                             image 'my-playwright'
                             reuseNode true
+                            args "-e REACT_APP_VERSION=${REACT_APP_VERSION}"
                         }
                     }
-
                     steps {
                         sh '''
                             serve -s build &
                             sleep 10
-                            npx playwright test  --reporter=html
+                            npx playwright test --reporter=html
                         '''
                     }
-
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Local E2E', reportTitles: '', useWrapperFileDirectly: true])
+                            publishHTML([
+                                allowMissing: false,
+                                alwaysLinkToLastBuild: false,
+                                keepAll: false,
+                                reportDir: 'playwright-report',
+                                reportFiles: 'index.html',
+                                reportName: 'Local E2E',
+                                useWrapperFileDirectly: true
+                            ])
                         }
                     }
                 }
@@ -95,6 +98,7 @@ pipeline {
                 docker {
                     image 'my-playwright'
                     reuseNode true
+                    args "-e REACT_APP_VERSION=${REACT_APP_VERSION}"
                 }
             }
 
@@ -108,14 +112,22 @@ pipeline {
                     echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
                     netlify status
                     netlify deploy --dir=build --json > deploy-output.json
-                    CI_ENVIRONMENT_URL=$(jq -r '.deploy_url' deploy-output.json)
-                    npx playwright test  --reporter=html
+                    export CI_ENVIRONMENT_URL=$(jq -r '.deploy_url' deploy-output.json)
+                    npx playwright test --reporter=html
                 '''
             }
 
             post {
                 always {
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: false,
+                        keepAll: false,
+                        reportDir: 'playwright-report',
+                        reportFiles: 'index.html',
+                        reportName: 'Staging E2E',
+                        useWrapperFileDirectly: true
+                    ])
                 }
             }
         }
@@ -125,6 +137,7 @@ pipeline {
                 docker {
                     image 'my-playwright'
                     reuseNode true
+                    args "-e REACT_APP_VERSION=${REACT_APP_VERSION}"
                 }
             }
 
@@ -134,18 +147,25 @@ pipeline {
 
             steps {
                 sh '''
-                    node --version
                     netlify --version
                     echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
                     netlify status
                     netlify deploy --dir=build --prod
-                    npx playwright test  --reporter=html
+                    npx playwright test --reporter=html
                 '''
             }
 
             post {
                 always {
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Prod E2E', reportTitles: '', useWrapperFileDirectly: true])
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: false,
+                        keepAll: false,
+                        reportDir: 'playwright-report',
+                        reportFiles: 'index.html',
+                        reportName: 'Prod E2E',
+                        useWrapperFileDirectly: true
+                    ])
                 }
             }
         }
