@@ -26,7 +26,6 @@ pipeline {
                 docker {
                     image 'node:18-alpine'
                     reuseNode true
-                    args "-e REACT_APP_VERSION=${REACT_APP_VERSION}"
                 }
             }
             steps {
@@ -36,6 +35,7 @@ pipeline {
                     npm --version
                     npm ci
                     npm run build
+                    ls -la build/
                 '''
             }
         }
@@ -48,7 +48,6 @@ pipeline {
                         docker {
                             image 'node:18-alpine'
                             reuseNode true
-                            args "-e REACT_APP_VERSION=${REACT_APP_VERSION}"
                         }
                     }
                     steps {
@@ -66,7 +65,6 @@ pipeline {
                         docker {
                             image 'my-playwright'
                             reuseNode true
-                            args "-e REACT_APP_VERSION=${REACT_APP_VERSION}"
                         }
                     }
                     steps {
@@ -98,12 +96,11 @@ pipeline {
                 docker {
                     image 'my-playwright'
                     reuseNode true
-                    args "-e REACT_APP_VERSION=${REACT_APP_VERSION}"
                 }
             }
 
             environment {
-                CI_ENVIRONMENT_URL = 'https://tiny-tartufo-cb9e6f.netlify.app'
+                CI_ENVIRONMENT_URL = 'STAGING'
             }
 
             steps {
@@ -112,7 +109,7 @@ pipeline {
                     echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
                     netlify status
                     netlify deploy --dir=build --json > deploy-output.json
-                    export CI_ENVIRONMENT_URL=$(jq -r '.deploy_url' deploy-output.json)
+                    CI_ENVIRONMENT_URL=$(jq -r '.deploy_url' deploy-output.json)
                     npx playwright test --reporter=html
                 '''
             }
@@ -137,7 +134,6 @@ pipeline {
                 docker {
                     image 'my-playwright'
                     reuseNode true
-                    args "-e REACT_APP_VERSION=${REACT_APP_VERSION}"
                 }
             }
 
