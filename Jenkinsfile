@@ -34,15 +34,30 @@ pipeline {
 
         stage('Build Docker image') {
             steps {
+                sh '''
+                    docker build -t $AWS_DOCKER_REGISTRY/$APP_NAME:$REACT_APP_VERSION .
+                '''
+            }
+        }
+
+        stage('Push to ECR') {
+            agent {
+                docker {
+                    image 'amazon/aws-cli:latest'
+                    reuseNode true
+                    args "-u root -v /var/run/docker.sock:/var/run/docker.sock --entrypoint=''"
+                }
+            }
+            steps {
                 withCredentials([usernamePassword(credentialsId: 'my-aws', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
                     sh '''
-                        docker build -t $AWS_DOCKER_REGISTRY/$APP_NAME:$REACT_APP_VERSION .
-                        aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_DOCKER_REGISTRY
+                        yum install -y docker
+                        aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_DOCKER_REGISTRY
                         docker push $AWS_DOCKER_REGISTRY/$APP_NAME:$REACT_APP_VERSION
                     '''
                 }
             }
-        }        
+        }
 
         stage('Deploy to AWS') {
             agent {
