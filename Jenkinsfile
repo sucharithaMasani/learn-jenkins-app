@@ -41,7 +41,9 @@ pipeline {
 
             steps {
                 sh '''
-                     docker build -t myjenkinsapp .
+                    docker build -t myjenkinsapp:${BUILD_NUMBER} .
+                    docker tag myjenkinsapp:${BUILD_NUMBER} myjenkinsapp:latest
+                     
                 '''
             }
         }        
@@ -49,7 +51,7 @@ pipeline {
         stage('Deploy to AWS') {
             agent {
                 docker {
-                    image 'my-aws-cli'
+                    image 'amazon/aws-cli'
                     reuseNode true
                     args "--entrypoint=''"
                 }
